@@ -11,6 +11,8 @@ using What2Eat.Services;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.CodeAnalysis.Elfie.Diagnostics;
+using What2Eat.service.IService;
+using What2Eat.service;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -59,7 +61,20 @@ builder.Services.AddAuthentication(options =>
 .AddJwtBearer(options =>
 {
     options.SaveToken = true;
-    options.RequireHttpsMetadata = true; // Endast för utveckling, sätt till true i produktion
+    // Allow no-HTTPS in development for local testing; in production RequireHttpsMetadata should be true.
+    options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
+    // Try to read token from 'jwt' cookie when present so we can use cookie-based JWT instead of Authorization header.
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            if (context.Request.Cookies.ContainsKey("accessToken"))
+            {
+                context.Token = context.Request.Cookies["accessToken"];
+            }
+            return Task.CompletedTask;
+        }
+    };
     options.TokenValidationParameters = new TokenValidationParameters()
     {
         ValidateIssuer = true,
@@ -68,11 +83,9 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuerSigningKey = true,
         ValidAudience = builder.Configuration["Jwt:Audience"],
         ValidIssuer = builder.Configuration["Jwt:Issuer"],
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
     };
 });
-
-
 
 builder.Services.AddAuthorization(options =>
 {
@@ -109,8 +122,8 @@ builder.Services.AddRateLimiter(options =>
 
     options.AddPolicy("RecipePolicy", context =>
         RateLimitPartition.GetFixedWindowLimiter(
-            partitionKey: context.User?.Identity?.Name 
-                          ?? context.Connection.RemoteIpAddress?.ToString() 
+            partitionKey: context.User?.Identity?.Name
+                          ?? context.Connection.RemoteIpAddress?.ToString()
                           ?? "anonymous",
             factory: _ => new FixedWindowRateLimiterOptions
             {
@@ -130,21 +143,16 @@ builder.Services.AddRateLimiter(options =>
     };
 });
 
-
-
-
 builder.Services.AddScoped<IAiService, OpenAiService>();
+builder.Services.AddScoped<IJwtService, JwtService>();
+
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
-
 var app = builder.Build();
-
-
 
 using (var scope = app.Services.CreateScope())
 {

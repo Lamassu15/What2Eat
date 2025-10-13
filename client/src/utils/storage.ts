@@ -1,3 +1,12 @@
-export const getToken = () => localStorage.getItem("jwt");
-export const saveToken = (token: string) => localStorage.setItem("jwt", token);
-export const clearToken = () => localStorage.removeItem("jwt");
+// src/utils/token.ts
+let inMemoryToken: string | null = null;
+
+export const getToken = () => inMemoryToken;
+
+export const saveToken = (token: string) => {
+  inMemoryToken = token;
+};
+
+export const clearToken = () => {
+  inMemoryToken = null;
+};

@@ -1,35 +1,9 @@
-import React, { createContext, useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { getToken, saveToken, clearToken } from "../utils/storage";
-import { getUserInfo } from "../api/me";
+import { getUserInfo } from "../api/auth";
 import { jwtDecode } from "jwt-decode";
+import { AuthContext } from "./AuhtContext";
 
-interface User {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  userName: string;
-  imgProfile?: string;
-  roles: string[];
-}
-
-interface AuthContextType {
-  token: string | null;
-  user: User | null;
-  loading: boolean;
-  login: (token: string) => void;
-  logout: () => void;
-  isAuthenticated: () => boolean;
-}
-
-export const AuthContext = createContext<AuthContextType>({
-  token: null,
-  user: null,
-  loading: true,
-  login: () => {},
-  logout: () => {},
-  isAuthenticated: () => false,
-});
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [token, setToken] = useState<string | null>(null);
@@ -48,9 +22,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   // ✅ Fetch user info if token changes
-  const fetchUser = async (jwt: string) => {
+  const fetchUser = async (token: string) => {
     try {
-      const userData = await getUserInfo(jwt);
+      const userData = await getUserInfo(token);
       setUser(userData);
     } catch (error) {
       console.error("Failed to fetch user:", error);

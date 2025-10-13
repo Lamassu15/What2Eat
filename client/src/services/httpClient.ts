@@ -1,19 +1,18 @@
-import { getToken } from "../utils/storage";
+import axios from "axios"
 
 const API_BASE = "http://localhost:5163/api";
 
 export const httpClient = async (url: string, options: RequestInit = {}) => {
-  const token = getToken();
 
   const headers: HeadersInit = {
     "Content-Type": "application/json",
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...options.headers, // tillåt override om det behövs
   };
 
   const response = await fetch(`${API_BASE}${url}`, {
     ...options,
     headers,
+    credentials: "include", // Lägg till cookies i alla förfrågningar
   });
 
   if (!response.ok) {

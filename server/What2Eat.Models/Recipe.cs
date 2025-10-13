@@ -32,5 +32,7 @@ namespace What2Eat.Models
         // Navigeringsegenskaper för relaterade listor
         public virtual ICollection<Ingredient> Ingredients { get; set; } = new List<Ingredient>();
         public virtual ICollection<Instruction> Instructions { get; set; } = new List<Instruction>();
+
+        
     }
 }

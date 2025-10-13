@@ -12,9 +12,9 @@ namespace What2Eat.Models
         public required string FirstName { get; set; }
         public required string LastName { get; set; }
         public string? ImgProfile { get; set; }
-       
+
         // Navigation properties for related entities can be added here
         public virtual ICollection<Recipe>? Recipes { get; set; }
-
+        public ICollection<RefreshToken> RefreshTokens { get; set; }
     }
 }

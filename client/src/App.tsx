@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { AuthProvider } from "./context/AuthContext";
+import { AuthProvider } from "./context/AuthProvider";
 import Layout from "@/components/Layout/Layout";
 import CenteredLayout from "@/components/Layout/CenteredLayout";
 import Home from "./pages/Home";
@@ -19,7 +19,7 @@ const queryClient = new QueryClient();
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Toaster position="top-right" richColors   />
+      <Toaster position="top-right" richColors />
       <AuthProvider>
         <TooltipProvider>
           <BrowserRouter>

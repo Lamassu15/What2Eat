@@ -14,6 +14,7 @@ namespace What2Eat.Data.Data
         public DbSet<Recipe> Recipes { get; set; }
         public DbSet<Ingredient> Ingredients { get; set; }
         public DbSet<Instruction> Instructions { get; set; }
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -39,6 +40,13 @@ namespace What2Eat.Data.Data
                 .WithMany(r => r.Instructions)
                 .HasForeignKey(ins => ins.RecipeId)
                 .OnDelete(DeleteBehavior.Cascade); // Kaskadradering om receptet raderas
+
+            builder.Entity<RefreshToken>()
+                .HasOne(rt => rt.ApplicationUser)
+                .WithMany(u => u.RefreshTokens)
+                .HasForeignKey(rt => rt.ApplicationUserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
         }
 
     }

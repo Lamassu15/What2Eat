@@ -7,6 +7,8 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using What2Eat.Models;
+using Microsoft.AspNetCore.Hosting;
+using What2Eat.service;
 
 namespace What2Eat.Areas.Customer.Controllers
 {
@@ -16,13 +18,17 @@ namespace What2Eat.Areas.Customer.Controllers
     {
         private readonly UserManager<ApplicationUser> _userManager; // Ändrad till ApplicationUser
         private readonly SignInManager<ApplicationUser> _signInManager; // Ändrad till ApplicationUser
+        private readonly IJwtService _jwtService;
         private readonly IConfiguration _configuration;
+        private readonly IWebHostEnvironment _env;
 
-        public AuthController(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, IConfiguration configuration) // Ändrad till ApplicationUser
+        public AuthController(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, IConfiguration configuration, IWebHostEnvironment env, IJwtService jwtService) // Ändrad till ApplicationUser
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _configuration = configuration;
+            _jwtService = jwtService;
+            _env = env;
         }
 
         [HttpPost("register")]
@@ -59,71 +65,151 @@ namespace What2Eat.Areas.Customer.Controllers
         public async Task<IActionResult> Login([FromBody] LoginModel model)
         {
             if (!ModelState.IsValid)
-            {
                 return BadRequest(ModelState);
-            }
 
             var user = await _userManager.FindByEmailAsync(model.Email);
             if (user == null)
-            {
                 return Unauthorized(new { Message = "Ogiltiga inloggningsuppgifter." });
-            }
 
             var result = await _signInManager.CheckPasswordSignInAsync(user, model.Password, false);
+            if (!result.Succeeded)
+                return Unauthorized(new { Message = "Ogiltiga inloggningsuppgifter." });
 
-            if (result.Succeeded)
+            var userRoles = await _userManager.GetRolesAsync(user);
+            // 1b. Generera Access Token via tjänsten (inkluderar JTI claim)
+            var accessToken = _jwtService.GenerateAccessToken(user, userRoles.ToList());
+
+            // 1c. Hämta JTI för att koppla Refresh Token
+            var jwtId = _jwtService.GetJwtIdFromToken(accessToken);
+
+            // --- STEG 2: GENERERA OCH SPARA REFRESH TOKEN ---
+            // 2. Generera och spara Refresh Token i databasen via tjänsten
+            var refreshTokenEntity = await _jwtService.GenerateRefreshTokenAsync(user, jwtId);
+
+            // --- STEG 3: HANTERA COOKIES (Access Token) ---
+            var accessTokenCookieOptions = new CookieOptions
             {
-                var userRoles = await _userManager.GetRolesAsync(user);
-                var authClaims = new List<Claim>
-                {
-                    new Claim(ClaimTypes.NameIdentifier, user.Id),
-                    new Claim(ClaimTypes.Name, user.UserName),
-                    new Claim(ClaimTypes.Email, user.Email),
-                    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                };
+                HttpOnly = true, // KRITISK: Skydd mot XSS
+                Secure = !_env.IsDevelopment(), // HTTPS i produktion
+                SameSite = _env.IsDevelopment() ? SameSiteMode.Lax : SameSiteMode.Strict,
+                // Livslängden för Access Token (kort) hämtas från JWT-datan (via tjänsten), inte hårdkodas här
+                Expires = refreshTokenEntity.CreationDate.AddMinutes(double.Parse(_configuration["Jwt:AccessTokenLifetimeMinutes"] ?? "15"))
+            };
 
-                // Lägg till ImgProfile som en claim om det finns
-                if (!string.IsNullOrEmpty(user.ImgProfile))
-                {
-                    authClaims.Add(new Claim("ImgProfile", user.ImgProfile));
-                }
+            // Lägg till Access Token-cookien
+            Response.Cookies.Append("accessToken", accessToken, accessTokenCookieOptions); // Notera bytet till "accessToken"
 
-                foreach (var userRole in userRoles)
-                {
-                    authClaims.Add(new Claim(ClaimTypes.Role, userRole));
-                }
+            // --- STEG 4: HANTERA COOKIES (Refresh Token) ---
+            var refreshTokenCookieOptions = new CookieOptions
+            {
+                HttpOnly = true, // KRITISK: Skydd mot XSS
+                Secure = !_env.IsDevelopment(),
+                SameSite = _env.IsDevelopment() ? SameSiteMode.Lax : SameSiteMode.Strict,
+                // Livslängden för Refresh Token (lång)
+                Expires = refreshTokenEntity.ExpiryDate
+            };
 
-                var authSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
+            // Lägg till Refresh Token-cookien
+            Response.Cookies.Append("refreshToken", refreshTokenEntity.Token, refreshTokenCookieOptions);
 
-                var token = new JwtSecurityToken(
-                    issuer: _configuration["Jwt:Issuer"],
-                    audience: _configuration["Jwt:Audience"],
-                    expires: DateTime.Now.AddHours(3), // Token giltigt i 3 timmar
-                    claims: authClaims,
-                    signingCredentials: new SigningCredentials(authSigningKey, SecurityAlgorithms.HmacSha256)
-                );
-
-                return Ok(new
-                {
-                    token = new JwtSecurityTokenHandler().WriteToken(token),
-                    expiration = token.ValidTo,
-                    message = "Inloggning lyckades!"
-                });
-            }
-
-            return Unauthorized(new { Message = "Ogiltiga inloggningsuppgifter." });
+            return Ok(new { message = "Inloggning lyckades!" });
         }
 
         [HttpPost("logout")]
         [Authorize] // Kräver att användaren är autentiserad för att logga ut
         public async Task<IActionResult> Logout()
         {
-            // För JWT-baserade API:er är "utloggning" primärt en klient-sidig operation där klienten tar bort token.
-            // Servern kan dock ogiltigförklara token om du implementerar en blocklist/revocation-mekanism,
-            // men det är utanför ramen för denna grundläggande guide.
-            // För enkelhetens skull returnerar vi bara en framgångsmeddelande.
+            // 1. Hämta Refresh Token-värdet från cookien
+            if (!HttpContext.Request.Cookies.TryGetValue("refreshToken", out var refreshToken))
+            {
+                // Om refresh token saknas, fortsätt ändå för att rensa det lilla som finns
+                return Ok(new { message = "Utloggning genomförd." });
+            }
+
+            try
+            {
+                // 2. SERVER-SIDA: Kritiskt steg! Ogiltigförklara Refresh Token i databasen.
+                // Detta förhindrar återanvändning av den långlivade token.
+                await _jwtService.RevokeRefreshTokenAsync(refreshToken);
+            }
+            catch (Exception ex)
+            {
+                // Logga felet men fortsätt rensa cookies, då klienten ändå ska loggas ut.
+                // Exempelvis: _logger.LogError(ex, "Kunde inte ogiltigförklara Refresh Token.");
+            }
+
+            // 3. KLIENT-SIDA: Ta bort Access Token-cookien (din korta JWT)
+            // OBS: Använd det korrekta namnet "accessToken" (inte "jwt" eller "refreshToken")
+            Response.Cookies.Delete("accessToken");
+
+            // 4. KLIENT-SIDA: Ta bort Refresh Token-cookien (din långlivade token)
+            Response.Cookies.Delete("refreshToken");
+
+            // 5. (Valfritt men ofarligt) SignOutAsync för Identity
+            // Eftersom du använder JWT/cookies och inte Identitys session-cookies, är denna rad ofarlig 
+            // men tillför inget värde och kan tas bort. 
             await _signInManager.SignOutAsync();
-            return Ok(new { Message = "Utloggning lyckades (token bör tas bort på klientsidan)." });
+
+            return Ok(new { message = "Utloggning lyckades. Alla sessionscookies raderade." });
+        }
+
+        [HttpPost("refresh-token")]
+        public async Task<IActionResult> RefreshToken()
+        {
+            // 1. Hämta tokens från Cookies
+            if (!HttpContext.Request.Cookies.TryGetValue("accessToken", out var expiredAccessToken) ||
+                !HttpContext.Request.Cookies.TryGetValue("refreshToken", out var oldRefreshToken))
+            {
+                // Om någon av de kritiska tokens saknas, avvisa och rensa eventuellt skräp.
+                // Det är bästa praxis att tvinga fram en fullständig inloggning här.
+                Response.Cookies.Delete("accessToken");
+                Response.Cookies.Delete("refreshToken");
+                return Unauthorized(new { Message = "Autentiseringsuppgifter saknas." });
+            }
+
+            try
+            {
+                // 2. SERVER-SIDA: Validera den gamla token och rotera till nya tokens.
+                // All tung logik (DB-sökning, validering, revokering, generering) sker inuti tjänsten.
+                var (newAccessToken, newRefreshTokenEntity) =
+                    await _jwtService.ValidateAndRotateTokensAsync(expiredAccessToken, oldRefreshToken);
+
+                // --- 3. SKICKA TILLBAKA NYA COOKIES ---
+
+                // a) Ny Access Token Cookie (Kort livslängd)
+                var accessTokenCookieOptions = new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = !_env.IsDevelopment(),
+                    SameSite = _env.IsDevelopment() ? SameSiteMode.Lax : SameSiteMode.Strict,
+                    // Sätt utgångstiden baserat på konfigurationen (t.ex. 15 minuter)
+                    Expires = DateTimeOffset.UtcNow.AddMinutes(double.Parse(_configuration["Jwt:AccessTokenLifetimeMinutes"] ?? "15"))
+                };
+                Response.Cookies.Append("accessToken", newAccessToken, accessTokenCookieOptions);
+
+                // b) Ny Refresh Token Cookie (Lång livslängd)
+                var refreshTokenCookieOptions = new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = !_env.IsDevelopment(),
+                    SameSite = _env.IsDevelopment() ? SameSiteMode.Lax : SameSiteMode.Strict,
+                    // Sätt utgångstiden från den sparade entiteten (t.ex. 7 dagar)
+                    Expires = newRefreshTokenEntity.ExpiryDate
+                };
+                Response.Cookies.Append("refreshToken", newRefreshTokenEntity.Token, refreshTokenCookieOptions);
+
+                // 4. Returnera framgång
+                return Ok(new { message = "Tokens framgångsrikt förnyade." });
+            }
+            catch (SecurityTokenException ex)
+            {
+                // 5. Hantera Säkerhetsfel (t.ex. Token Reuse, ogiltig token, utgången refresh token)
+                // Vid säkerhetsfel ska alla tokens rensas och klienten tvingas logga in på nytt.
+                Response.Cookies.Delete("accessToken");
+                Response.Cookies.Delete("refreshToken");
+                // Logga felet (ex)
+                return Unauthorized(new { Message = "Sessionsförnyelse misslyckades: " + ex.Message });
+            }
         }
 
         // Exempel på en endpoint som kräver autentisering
@@ -133,13 +219,14 @@ namespace What2Eat.Areas.Customer.Controllers
         {
             // Du kan nu hämta det anpassade fältet från claims om det lades till vid inloggning
             var imgProfileClaim = User.Claims.FirstOrDefault(c => c.Type == "ImgProfile")?.Value;
-            var responseMessage = $"Hej, {User.Identity.Name}! Du har tillgång till skyddad data.";
+            var identityName = User.Identity?.Name ?? "användare";
+            var responseMessage = $"Hej, {identityName}! Du har tillgång till skyddad data.";
             if (!string.IsNullOrEmpty(imgProfileClaim))
             {
                 responseMessage += $" Din profilbild är: {imgProfileClaim}";
             }
             var roles = User.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => c.Value).ToList();
-            
+
             return Ok(new { message = responseMessage, roles = roles });
         }
 
@@ -198,8 +285,8 @@ namespace What2Eat.Areas.Customer.Controllers
                 return NotFound(new { Message = "Användaren hittades inte." });
             }
 
-                // This is the key line to get the user's roles.
-    var userRoles = await _userManager.GetRolesAsync(user);
+            // This is the key line to get the user's roles.
+            var userRoles = await _userManager.GetRolesAsync(user);
 
             return Ok(new
             {

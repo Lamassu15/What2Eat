@@ -1,13 +1,9 @@
 using OpenAI.Chat;
 using System.Text.Json;
 using What2Eat.Dtos;
+using What2Eat.service.IService;
 
 namespace What2Eat.Services;
-
-public interface IAiService
-{
-    Task<OpenAiRecipeDto> GenerateRecipeAsync(string ingredients);
-}
 
 public class OpenAiService : IAiService
 {

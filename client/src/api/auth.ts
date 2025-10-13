@@ -1,9 +1,9 @@
 import { useMutation } from "@tanstack/react-query";
 import { httpClient } from "../services/httpClient";
-import { saveToken } from "../utils/storage";
 
 type LoginRequest = { email: string; password: string };
-type LoginResponse = { token: string };
+
+type LoginResponse = { message: string };
 
 export const useLogin = () => {
   return useMutation<LoginResponse, Error, LoginRequest>({
@@ -12,8 +12,18 @@ export const useLogin = () => {
         method: "POST",
         body: JSON.stringify(data),
       }),
-    onSuccess: (data) => {
-      saveToken(data.token);
-    },
   });
+};
+
+export const useLogout = () => {
+  return useMutation({
+    mutationFn: () =>
+      httpClient("/auth/logout", {
+        method: "POST",
+      }),
+  });
+};
+
+export const getUserInfo = async () => {
+  return await httpClient("/auth/me");
 };
