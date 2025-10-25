@@ -1,44 +1,95 @@
-import axios from "axios"
+import { refreshToken } from "@/api/auth";
+import axios, {
+  AxiosError,
+  type AxiosInstance,
+  type AxiosRequestConfig,
+} from "axios";
 
-const API_BASE = "http://localhost:5163/api";
+const apiURL = import.meta.env.VITE_API_BASE_URL
+  ? import.meta.env.VITE_RENDER_BASE_UR
+  : "";
 
-export const httpClient = async (url: string, options: RequestInit = {}) => {
+export const httpClient: AxiosInstance = axios.create({
+  baseURL: apiURL, // Vi behöver INTE skicka Authorization header; cookies sköter det
+  withCredentials: true,
+  headers: { "Content-Type": "application/json" },
+});
 
-  const headers: HeadersInit = {
-    "Content-Type": "application/json",
-    ...options.headers, // tillåt override om det behövs
-  };
+httpClient.interceptors.request.use((config) => {
+  // Om datan är FormData (t.ex. vid bilduppladdning)
+  if (config.data instanceof FormData) {
+    // Ta bort Content-Type så att webbläsaren sätter korrekt boundary
+    delete config.headers["Content-Type"];
+  } else {
+    // JSON som standard
+    config.headers["Content-Type"] = "application/json";
+  }
+  return config;
+});
 
-  const response = await fetch(`${API_BASE}${url}`, {
-    ...options,
-    headers,
-    credentials: "include", // Lägg till cookies i alla förfrågningar
-  });
+// --- Token Rotation State ---
+let isRefreshing = false;
+// Kön för requests som väntar på den nya token.
+// Lagrar Promise resolve/reject-funktioner för att sprida felet korrekt.
+let failedRequests: {
+  resolve: (value: unknown) => void;
+  reject: (reason?: unknown) => void;
+  originalRequest: AxiosRequestConfig;
+}[] = [];
 
-  if (!response.ok) {
-    // bättre felhantering: returnera json om möjligt
-    let errorMessage = `API Error: ${response.status}`;
-    try {
-      const errorData = await response.json();
-      if (errorData?.message) {
-        errorMessage = errorData.message;
+// --- Response Interceptor ---
+httpClient.interceptors.response.use(
+  (response) => response,
+  async (error: AxiosError) => {
+    const originalRequest = error.config as AxiosRequestConfig & {
+      _retry?: boolean; // Flagga för att förhindra oändlig loop
+    };
+
+    const status = error.response?.status;
+    const isRefreshRequest = originalRequest.url?.includes(
+      "/auth/refresh-token"
+    );
+    const isLoginRequest = originalRequest.url?.includes("/auth/login"); // 1. Fånga 401 Unauthorized där Access Token har löpt ut
+
+    if (status === 401 && !originalRequest._retry && !isLoginRequest) {
+      // KRITISK KONTROLL: Om /refresh-token returnerar 401, måste vi logga ut
+      if (isRefreshRequest) {
+        return Promise.reject(error);
+      } // 2. Vänta om förnyelse redan pågår
+
+      if (isRefreshing) {
+        // Köa den ursprungliga förfrågan
+        return new Promise((resolve, reject) => {
+          failedRequests.push({ resolve, reject, originalRequest });
+        });
+      } // 3. Starta förnyelse (första 401:an)
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      try {
+        // Anropa refresh endpointen. Den sätter de nya cookies i webbläsaren.
+        // Use raw axios to avoid interceptor loop and any circular imports.
+        await refreshToken();
+
+        failedRequests.forEach(({ resolve, originalRequest }) => {
+          resolve(httpClient.request(originalRequest));
+        });
+        failedRequests = []; // Försök den ursprungliga förfrågan igen
+
+        return httpClient(originalRequest);
+      } catch (err) {
+        // Refresh misslyckades. Tvinga ut alla köade requests att misslyckas.
+        failedRequests.forEach(({ reject }) => reject(err));
+        failedRequests = [];
+        return Promise.reject(err);
+      } finally {
+        isRefreshing = false;
       }
-    } catch {
-      // ignore om ingen json finns
     }
-    throw new Error(errorMessage);
+    // 4. Returnera alla andra fel
+    return Promise.reject(error);
   }
-  // Some endpoints (DELETE) may return 204 No Content. In that case
-  // response.json() will throw — handle that and return null so callers
-  // (mutations expecting void) resolve correctly and React Query can
-  // invalidate/refetch.
-  if (response.status === 204) return null;
+);
 
-  try {
-    return await response.json();
-  } catch {
-    // If parsing fails (no JSON body), return null so higher-level
-    // API helpers can interpret as void/null.
-    return null;
-  }
-};
+export default httpClient;

@@ -6,6 +6,7 @@ using System.Text;
 using Microsoft.Extensions.Configuration;
 using Microsoft.EntityFrameworkCore;
 using What2Eat.service;
+using Microsoft.AspNetCore.Identity;
 using What2Eat.Data.Data;
 using What2Eat.Models;
 
@@ -14,13 +15,15 @@ public class JwtService : IJwtService
     private readonly ApplicationDbContext _context; // Ersätt med din DbContext
     private readonly IConfiguration _configuration;
     private readonly SymmetricSecurityKey _signingKey;
+    private readonly UserManager<ApplicationUser> _userManager;
 
     // Antar att ApplicationUser och RefreshToken är definierade i YourProject.Models
 
-    public JwtService(ApplicationDbContext context, IConfiguration configuration)
+    public JwtService(ApplicationDbContext context, IConfiguration configuration, UserManager<ApplicationUser> userManager)
     {
         _context = context;
         _configuration = configuration;
+        _userManager = userManager;
         // Hämta säkerhetsnyckeln från konfigurationen
         var key = _configuration["Jwt:Key"] ?? throw new InvalidOperationException("JWT Key saknas i konfigurationen.");
         _signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));
@@ -105,14 +108,20 @@ public class JwtService : IJwtService
         }
 
         // 2. EXTRAHERA CLAIMS FRÅN GAMMAL ACCESS TOKEN FÖR ATT KONTROLLERA KOPPLING (Rotation)
-        var jtiFromAccess = GetJwtIdFromToken(expiredAccessToken);
-
-        // Kontrollera att Refresh Token matchar den Access Token den skapades för
-        if (storedToken.JwtId != jtiFromAccess)
+        // Om klienten inte skickade en (utgången) access token, hoppa över JTI-matchningen.
+        // Detta hanterar scenariot där accessToken-cookien saknas (t.ex. efter utgång) men
+        // refreshToken fortfarande är giltig.
+        if (!string.IsNullOrEmpty(expiredAccessToken))
         {
-            // Möjlig Reuse Attack. Revokera allt!
-            await RevokeAllUserRefreshTokensAsync(storedToken.ApplicationUserId);
-            throw new SecurityTokenException("Token mismatch: Token Reuse Detected.");
+            var jtiFromAccess = GetJwtIdFromToken(expiredAccessToken);
+
+            // Kontrollera att Refresh Token matchar den Access Token den skapades för
+            if (storedToken.JwtId != jtiFromAccess)
+            {
+                // Möjlig Reuse Attack. Revokera allt!
+                await RevokeAllUserRefreshTokensAsync(storedToken.ApplicationUserId);
+                throw new SecurityTokenException("Token mismatch: Token Reuse Detected.");
+            }
         }
 
         // --- ROTATIONSSTEG ---
@@ -122,11 +131,16 @@ public class JwtService : IJwtService
 
         // 4. GENERERA NY Access Token och hämta de aktuella rollerna
         var user = storedToken.ApplicationUser;
-        // Här behöver du en metod för att hämta rollerna. 
-        // Vi antar att du har en service som heter _userManager.GetRolesAsync(user)
-        var userRoles = new List<string> { "StandardUser" }; // <--- ERSÄTT DENNA HÄR
+        if (user == null)
+        {
+            // Om användaren som är kopplad till refresh token saknas, avvisa
+            throw new SecurityTokenException("Användare kopplad till refresh token hittades inte.");
+        }
 
-        var newAccessToken = GenerateAccessToken(user, userRoles);
+        // Hämta roller via UserManager
+        var userRoles = await _userManager.GetRolesAsync(user);
+
+        var newAccessToken = GenerateAccessToken(user, userRoles.ToList());
         var newJwtId = GetJwtIdFromToken(newAccessToken);
 
         // 5. GENERERA och SPARA NY Refresh Token

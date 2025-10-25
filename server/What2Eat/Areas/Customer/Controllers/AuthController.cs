@@ -32,34 +32,69 @@ namespace What2Eat.Areas.Customer.Controllers
         }
 
         [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] Register model)
+        public async Task<IActionResult> Register([FromForm] Register model)
         {
             if (!ModelState.IsValid)
-            {
                 return BadRequest(ModelState);
+
+            string? imagePath = null;
+
+            if (model.ImgProfile != null)
+            {
+                var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "profile_images");
+                if (!Directory.Exists(uploadsFolder))
+                    Directory.CreateDirectory(uploadsFolder);
+
+                var uniqueFileName = Guid.NewGuid().ToString() + Path.GetExtension(model.ImgProfile.FileName);
+                var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+                using (var fileStream = new FileStream(filePath, FileMode.Create))
+                {
+                    await model.ImgProfile.CopyToAsync(fileStream);
+                }
+
+                // Spara relativ sökväg (t.ex. /profile_images/123.jpg)
+                imagePath = $"/profile_images/{uniqueFileName}";
             }
 
-            // Skapa en instans av ApplicationUser och tilldela fält
             var user = new ApplicationUser
             {
                 UserName = model.Email,
                 Email = model.Email,
-                FirstName = model.FirstName,   // Tilldela det nya fältet
-                LastName = model.LastName,     // Tilldela det nya fältet
-                ImgProfile = model.ImgProfile
+                FirstName = model.FirstName,
+                LastName = model.LastName,
+                ImgProfile = imagePath
             };
 
             var result = await _userManager.CreateAsync(user, model.Password);
 
             if (result.Succeeded)
             {
-                // Tilldela "User" rollen till nya användare som standard
                 await _userManager.AddToRoleAsync(user, "User");
-                return Ok(new { Message = "Användare registrerad framgångsrikt!" });
+
+                // Bygg full URL till profilbilden (bra för frontend)
+                string? baseUrl = $"{Request.Scheme}://{Request.Host}";
+                string? fullImageUrl = imagePath != null ? $"{baseUrl}{imagePath}" : null;
+
+                // Returnera användardata till frontend
+                return Ok(new
+                {
+                    Message = "Användare registrerad framgångsrikt!",
+                    User = new
+                    {
+                        user.Id,
+                        user.FirstName,
+                        user.LastName,
+                        user.Email,
+                        user.UserName,
+                        ImgProfile = fullImageUrl
+                    }
+                });
             }
 
             return BadRequest(result.Errors);
         }
+
 
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginModel model)
@@ -156,15 +191,14 @@ namespace What2Eat.Areas.Customer.Controllers
         [HttpPost("refresh-token")]
         public async Task<IActionResult> RefreshToken()
         {
-            // 1. Hämta tokens från Cookies
-            if (!HttpContext.Request.Cookies.TryGetValue("accessToken", out var expiredAccessToken) ||
-                !HttpContext.Request.Cookies.TryGetValue("refreshToken", out var oldRefreshToken))
+            // 1. Hämta refreshToken från Cookies (accessToken kan vara utgången/ saknas)
+            HttpContext.Request.Cookies.TryGetValue("accessToken", out var expiredAccessToken);
+            if (!HttpContext.Request.Cookies.TryGetValue("refreshToken", out var oldRefreshToken))
             {
-                // Om någon av de kritiska tokens saknas, avvisa och rensa eventuellt skräp.
-                // Det är bästa praxis att tvinga fram en fullständig inloggning här.
+                // Om refresh token saknas, rensa och tvinga inloggning
                 Response.Cookies.Delete("accessToken");
                 Response.Cookies.Delete("refreshToken");
-                return Unauthorized(new { Message = "Autentiseringsuppgifter saknas." });
+                return Unauthorized(new { Message = "Refresh token saknas." });
             }
 
             try
@@ -172,7 +206,7 @@ namespace What2Eat.Areas.Customer.Controllers
                 // 2. SERVER-SIDA: Validera den gamla token och rotera till nya tokens.
                 // All tung logik (DB-sökning, validering, revokering, generering) sker inuti tjänsten.
                 var (newAccessToken, newRefreshTokenEntity) =
-                    await _jwtService.ValidateAndRotateTokensAsync(expiredAccessToken, oldRefreshToken);
+                    await _jwtService.ValidateAndRotateTokensAsync(expiredAccessToken ?? string.Empty, oldRefreshToken);
 
                 // --- 3. SKICKA TILLBAKA NYA COOKIES ---
 
@@ -182,18 +216,17 @@ namespace What2Eat.Areas.Customer.Controllers
                     HttpOnly = true,
                     Secure = !_env.IsDevelopment(),
                     SameSite = _env.IsDevelopment() ? SameSiteMode.Lax : SameSiteMode.Strict,
-                    // Sätt utgångstiden baserat på konfigurationen (t.ex. 15 minuter)
-                    Expires = DateTimeOffset.UtcNow.AddMinutes(double.Parse(_configuration["Jwt:AccessTokenLifetimeMinutes"] ?? "15"))
+                    Expires = DateTimeOffset.UtcNow.AddMinutes(
+                        double.Parse(_configuration["Jwt:AccessTokenLifetimeMinutes"] ?? "15")
+                    )
                 };
                 Response.Cookies.Append("accessToken", newAccessToken, accessTokenCookieOptions);
 
-                // b) Ny Refresh Token Cookie (Lång livslängd)
                 var refreshTokenCookieOptions = new CookieOptions
                 {
                     HttpOnly = true,
                     Secure = !_env.IsDevelopment(),
                     SameSite = _env.IsDevelopment() ? SameSiteMode.Lax : SameSiteMode.Strict,
-                    // Sätt utgångstiden från den sparade entiteten (t.ex. 7 dagar)
                     Expires = newRefreshTokenEntity.ExpiryDate
                 };
                 Response.Cookies.Append("refreshToken", newRefreshTokenEntity.Token, refreshTokenCookieOptions);
@@ -285,8 +318,14 @@ namespace What2Eat.Areas.Customer.Controllers
                 return NotFound(new { Message = "Användaren hittades inte." });
             }
 
-            // This is the key line to get the user's roles.
             var userRoles = await _userManager.GetRolesAsync(user);
+
+            // ✅ Bygg en full URL till bilden, om den finns
+            string? fullImageUrl = null;
+            if (!string.IsNullOrEmpty(user.ImgProfile))
+            {
+                fullImageUrl = $"{Request.Scheme}://{Request.Host}{user.ImgProfile}";
+            }
 
             return Ok(new
             {
@@ -295,10 +334,10 @@ namespace What2Eat.Areas.Customer.Controllers
                 lastName = user.LastName,
                 email = user.Email,
                 userName = user.UserName,
-                imgProfile = user.ImgProfile,
-                // get what role user has
+                imgProfile = fullImageUrl, // <--- här returneras full URL
                 roles = userRoles
             });
         }
+
     }
 }

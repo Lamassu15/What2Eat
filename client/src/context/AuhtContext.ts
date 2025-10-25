@@ -1,6 +1,6 @@
 import { createContext } from "react";
 
-interface User {
+export interface User {
   id: string;
   firstName: string;
   lastName: string;
@@ -11,19 +11,18 @@ interface User {
 }
 
 interface AuthContextType {
-  token: string | null;
   user: User | null;
   loading: boolean;
-  login: (token: string) => void;
-  logout: () => void;
-  isAuthenticated: () => boolean;
+  login: (credentials: { email: string; password: string }) => Promise<void>;
+  logout: () => Promise<void>;
+  isAuthenticated: boolean;
 }
 
 export const AuthContext = createContext<AuthContextType>({
-  token: null,
   user: null,
   loading: true,
-  login: () => {},
-  logout: () => {},
-  isAuthenticated: () => false,
+  login: async (): Promise<void> => Promise.resolve(),
+  logout: async (): Promise<void> => Promise.resolve(),
+  isAuthenticated: false,
 });
+

@@ -15,6 +15,6 @@ namespace What2Eat.Models
 
         // Navigation properties for related entities can be added here
         public virtual ICollection<Recipe>? Recipes { get; set; }
-        public ICollection<RefreshToken> RefreshTokens { get; set; }
+        public ICollection<RefreshToken>? RefreshTokens { get; set; }
     }
 }

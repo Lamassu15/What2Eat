@@ -1,4 +1,4 @@
-@What2Eat_HostAddress = http://localhost:5163
+@What2Eat_HostAddress = https://localhost:7123
 
 GET {{What2Eat_HostAddress}}/weatherforecast/
 Accept: application/json

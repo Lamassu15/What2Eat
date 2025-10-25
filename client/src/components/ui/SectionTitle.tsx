@@ -20,7 +20,7 @@ export const SectionTitle: React.FC<SectionTitleProps> = ({
     >
       <h2 className="heading-2 font-bold">{title}</h2>
       {subtitle && (
-        <p className="text-muted-foreground mt-3 max-w-2xl mx-auto paragraph">
+        <p className="text-muted-foreground mt-3 paragraph mx-auto paragraph">
           {subtitle}
         </p>
       )}

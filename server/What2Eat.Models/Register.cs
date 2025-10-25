@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Http;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -11,6 +12,7 @@ namespace What2Eat.Models
     {   
         [Required]
         [EmailAddress]
+        [DataType(DataType.EmailAddress)]
         public required string Email { get; set; }
         [Required]
         [StringLength(100, ErrorMessage = "Lösenordet måste vara minst {2} och max {1} tecken långt.", MinimumLength = 6)]
@@ -22,7 +24,8 @@ namespace What2Eat.Models
         [Required]
         public required string FirstName { get; set; } 
         [Required]
-        public required string LastName { get; set; }  
-        public string? ImgProfile { get; set; } 
+        public required string LastName { get; set; }
+        public IFormFile? ImgProfile { get; set; }
+
     }
 }

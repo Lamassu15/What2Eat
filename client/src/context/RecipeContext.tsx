@@ -52,7 +52,7 @@ export const useRecipes = () => {
       const data = await getRecipes();
       return data as Recipe[];
     },
-    enabled: isAuthenticated(),
+    enabled: isAuthenticated,
     staleTime: 1000 * 60,
   });
 

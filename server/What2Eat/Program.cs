@@ -29,14 +29,13 @@ else
     Console.WriteLine("✅ OpenAI API-nyckel laddad (dold).");
 }
 
-
 // Add services to the container.
 var connectionString =
     builder.Configuration.GetConnectionString("DefaultConnection")
         ?? throw new InvalidOperationException("Connection string"
         + "'DefaultConnection' not found.");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(connectionString));
+options.UseNpgsql(connectionString));
 
 // Konfigurera Identity (Använder nu ApplicationUser)
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
@@ -107,7 +106,9 @@ builder.Services.AddCors(options =>
             "http://localhost:5173",
             "https://localhost:5173",
             "http://localhost:5174",
-            "https://localhost:5174"
+            "https://localhost:5174",
+            "https://localhost:7123"
+
         )
         .AllowAnyHeader()
         .AllowAnyMethod()
@@ -206,6 +207,8 @@ app.UseHttpsRedirection();
 app.UseCors(ClientCorsPolicy);
 
 app.UseRateLimiter();
+
+app.UseStaticFiles();
 
 app.UseAuthentication();
 app.UseAuthorization();

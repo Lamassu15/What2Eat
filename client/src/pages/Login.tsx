@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/form";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, Loader2 } from "lucide-react";
-import logo from "../assets/What2Eat.webp"
+import logo from "../assets/What2Eat.webp";
 
 // ✅ Fixat: Zod schema
 const loginSchema = z.object({
@@ -46,16 +46,14 @@ const Login = () => {
     },
   });
 
-  const onSubmit = (data: LoginFormData) => {
-    mutation.mutate(
-      { email: data.email, password: data.password },
-      {
-        onSuccess: (responseData) => {
-          login(responseData.token);
-          navigate("/chat");
-        },
-      }
-    );
+  const onSubmit = async (data: LoginFormData) => {
+    try {
+      // login() tar hand om API-anrop + uppdatering av user i AuthContext
+      await login({ email: data.email, password: data.password });
+      navigate("/chat");
+    } catch (error: any) {
+      console.error("Login failed:", error);
+    }
   };
 
   return (

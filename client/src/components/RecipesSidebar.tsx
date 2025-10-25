@@ -9,7 +9,7 @@ import {
 } from "./ui/sidebar";
 import { useRecipes, type Recipe } from "@/context/RecipeContext";
 import { LoaderCircle, EllipsisVertical, Trash2 } from "lucide-react";
-import { MdOutlineFastfood } from "react-icons/md";
+import { UtensilsCrossed } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import {
@@ -18,8 +18,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
-import { ScrollArea } from "@/components/ui/scroll-area";
-
 import {
   AlertDialog,
   AlertDialogAction,
@@ -50,70 +48,65 @@ const RecipesSidebar = () => {
 
   return (
     <>
-      {isAuthenticated() && (
+      {isAuthenticated && (
         <SidebarGroupContent>
           <SidebarGroupLabel>Recipes</SidebarGroupLabel>
           {/* react-query provides isLoading; updates after mutations are indicated by reloads */}
-          <ScrollArea className="h-[800px]">
-            <SidebarMenu>
-              {isLoading && (
-                <div className="flex items-center gap-2 p-2 text-xs text-muted-foreground">
-                  <LoaderCircle className="animate-spin h-4 w-4" />
-                  isLoading recipes...
-                </div>
-              )}
 
-              {error && !isLoading && (
-                <div className="p-4 text-sm text-destructive">
-                  {error.message}
-                </div>
-              )}
+          <SidebarMenu>
+            {isLoading && (
+              <div className="flex items-center gap-2 p-2 text-xs text-muted-foreground">
+                <LoaderCircle className="animate-spin h-4 w-4" />
+                isLoading recipes...
+              </div>
+            )}
 
-              {!isLoading && !error && recipes.length === 0 && (
-                <div className="p-4 text-sm text-muted-foreground">
-                  No recipes found.
-                </div>
-              )}
+            {error && !isLoading && (
+              <div className="p-4 text-sm text-destructive">
+                {error.message}
+              </div>
+            )}
 
-              {!isLoading &&
-                !error &&
-                recipes.length > 0 &&
-                recipes.map((recipe: Recipe) => (
-                  <SidebarMenuItem key={recipe.id}>
-                    <SidebarMenuButton asChild>
-                      <NavLink
-                        to={`/recipes/${recipe.id}`}
-                        title={recipe.title}
+            {!isLoading && !error && recipes.length === 0 && (
+              <div className="p-4 text-sm text-muted-foreground">
+                No recipes found.
+              </div>
+            )}
+
+            {!isLoading &&
+              !error &&
+              recipes.length > 0 &&
+              recipes.map((recipe: Recipe) => (
+                <SidebarMenuItem key={recipe.id}>
+                  <SidebarMenuButton asChild>
+                    <NavLink to={`/recipes/${recipe.id}`} title={recipe.title}>
+                      <UtensilsCrossed />
+                      <span className="truncate">
+                        {truncateWords(recipe.title, 3)}
+                      </span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <SidebarMenuAction>
+                        <EllipsisVertical />
+                      </SidebarMenuAction>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent side="right" align="center">
+                      <DropdownMenuItem
+                        onClick={() => setSelectedRecipe(recipe)}
+                        disabled={
+                          (remove as { status?: string })?.status === "loading"
+                        }
                       >
-                        <MdOutlineFastfood />
-                        <span className="truncate">
-                          {truncateWords(recipe.title, 3)}
-                        </span>
-                      </NavLink>
-                    </SidebarMenuButton>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <SidebarMenuAction>
-                          <EllipsisVertical />
-                        </SidebarMenuAction>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent side="right" align="center">
-                        <DropdownMenuItem
-                          onClick={() => setSelectedRecipe(recipe)}
-                          disabled={
-                            (remove as { status?: string })?.status ===
-                            "loading"
-                          }
-                        >
-                          <Trash2 />
-                          <span>Delete</span>
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </SidebarMenuItem>
-                ))}
-            </SidebarMenu>
-          </ScrollArea>
+                        <Trash2 />
+                        <span>Delete</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </SidebarMenuItem>
+              ))}
+          </SidebarMenu>
 
           {/* AlertDialog */}
           {selectedRecipe && (

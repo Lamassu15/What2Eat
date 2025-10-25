@@ -15,9 +15,9 @@ const iconMap: Record<string, JSX.Element> = {
 
 const Home = () => {
   return (
-    <div className="w-full bg-background">
+    <div className="w-full h-full flex flex-col items-center bg-background">
       {/* Hero Content */}
-      <div className="relative z-10 flex flex-col items-center justify-center py-16 md:py-24 px-4 text-center">
+      <div className="relative z-10 mt-20 mb-20 flex flex-col items-center justify-center text-center">
         <div className="max-w-4xl mx-auto animate-slide-up">
           <Badge
             variant="secondary"
@@ -26,19 +26,19 @@ const Home = () => {
             Welcome to What2Eat
           </Badge>
 
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight text-foreground">
+          <h1 className="heading-1 font-bold mb-6 leading-tight text-foreground">
             Your Personal
             <span className="block bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent">
               AI Recipe Generator
             </span>
           </h1>
 
-          <p className="text-xl md:text-2xl mb-8 max-w-2xl mx-auto leading-relaxed text-muted-foreground">
+          <p className="paragraph mb-8 max-w-2xl mx-auto leading-relaxed text-muted-foreground">
             Discover, create, and organize your culinary adventures. From family
             recipes to new discoveries, keep them all in one beautiful place.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button asChild size="lg" variant="default">
               <Link to="/chat">
                 Generate Recipes
@@ -55,15 +55,15 @@ const Home = () => {
           </div>
         </div>
       </div>
-      <hr className="my-12 h-px border-t-0 bg-transparent bg-gradient-to-r from-transparent via-neutral-500 to-transparent opacity-25 dark:via-neutral-400"></hr>
+      <hr className="my-12 w-full h-px border-t-0 bg-transparent bg-gradient-to-r from-transparent via-neutral-500 to-transparent opacity-25 dark:via-neutral-400"></hr>
       {/* Features Section */}
-      <section className="relative z-10 py-16 px-4 bg-background">
+      <section className="relative z-10  bg-background">
         <div className="max-w-5xl mx-auto">
           <SectionTitle
             title="Features"
             subtitle="Create a recipe by a click"
           ></SectionTitle>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3  gap-8">
             {features.map((feature) => (
               <Card
                 key={feature.title}

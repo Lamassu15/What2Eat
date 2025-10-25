@@ -11,6 +11,7 @@ import z from "zod";
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -30,7 +31,26 @@ const formSchema = z
       .string()
       .regex(/^[a-zA-Z\s]+$/, "Last name must contain only letters.")
       .nonempty("Last name is required."),
-    imgProfile: z.string().url("Invalid URL.").optional().or(z.literal("")),
+    imgProfile: z
+      .any()
+      .refine(
+        (fileList) =>
+          fileList instanceof FileList
+            ? fileList.length === 0 ||
+              ["image/jpeg", "image/png", "image/jpg"].includes(
+                fileList[0]?.type
+              )
+            : true,
+        "Only JPG and PNG images are allowed."
+      )
+      .refine(
+        (fileList) =>
+          fileList instanceof FileList
+            ? fileList.length === 0 || fileList[0]?.size <= 5 * 1024 * 1024
+            : true,
+        "File must be less than 5MB."
+      )
+      .optional(),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match.",
@@ -50,7 +70,7 @@ const RegisterForm = () => {
       confirmPassword: "",
       firstName: "",
       lastName: "",
-      imgProfile: "",
+      imgProfile: undefined,
     },
     mode: "onBlur",
   });
@@ -65,14 +85,14 @@ const RegisterForm = () => {
         confirmPassword: data.confirmPassword,
         firstName: data.firstName,
         lastName: data.lastName,
-        imgProfile: data.imgProfile || undefined,
+        imgProfile: data.imgProfile ? data.imgProfile[0] : undefined,
       });
       navigate("/login");
-    } catch (err: any) {
-      console.error("Registration failed:", err);
-      setError(
-        err.response?.data?.message || "Registration failed. Please try again."
-      );
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error("Registration failed:", error.message);
+      }
+      setError("Registration failed. Please try again.");
     }
     setIsSubmitting(false);
   };
@@ -169,14 +189,15 @@ const RegisterForm = () => {
             name="imgProfile"
             render={({ field }) => (
               <FormItem className="md:col-span-2">
-                <FormLabel>Profile Picture (URL)</FormLabel>
+                <FormLabel>Profile Image</FormLabel>
                 <FormControl>
                   <Input
-                    type="url"
-                    placeholder="https://example.com/image.jpg"
-                    {...field}
+                    type="file"
+                    accept="image/png, image/jpeg, image/jpg"
+                    onChange={(e) => field.onChange(e.target.files)}
                   />
                 </FormControl>
+                <FormDescription>Only JPG, PNG, JPEG (Max 5MB)</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
