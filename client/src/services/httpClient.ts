@@ -6,7 +6,7 @@ import axios, {
 } from "axios";
 
 const apiURL = import.meta.env.VITE_API_BASE_URL
-  ? import.meta.env.VITE_RENDER_BASE_UR
+  ? import.meta.env.VITE_BACKEND_BASE_UR
   : "";
 
 export const httpClient: AxiosInstance = axios.create({
