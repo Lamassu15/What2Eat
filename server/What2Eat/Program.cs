@@ -108,8 +108,8 @@ builder.Services.AddCors(options =>
             "http://localhost:5174",
             "https://localhost:5174",
             "https://localhost:7123",
-            "https://what2-eat-eta.vercel.app/",
-            "https://yellow-sea-054692b03.3.azurestaticapps.net/"
+            "https://what2-eat-eta.vercel.app",
+            "https://yellow-sea-054692b03.3.azurestaticapps.net"
         )
         .AllowAnyHeader()
         .AllowAnyMethod()
