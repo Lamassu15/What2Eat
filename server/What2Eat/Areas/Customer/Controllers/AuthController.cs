@@ -125,8 +125,8 @@ namespace What2Eat.Areas.Customer.Controllers
             var accessTokenCookieOptions = new CookieOptions
             {
                 HttpOnly = true, // KRITISK: Skydd mot XSS
-                Secure = !_env.IsDevelopment(), // HTTPS i produktion
-                SameSite = _env.IsDevelopment() ? SameSiteMode.Lax : SameSiteMode.Strict,
+                Secure = true,
+                SameSite = SameSiteMode.None,
                 // Livslängden för Access Token (kort) hämtas från JWT-datan (via tjänsten), inte hårdkodas här
                 Expires = refreshTokenEntity.CreationDate.AddMinutes(double.Parse(_configuration["Jwt:AccessTokenLifetimeMinutes"] ?? "15"))
             };
@@ -137,9 +137,9 @@ namespace What2Eat.Areas.Customer.Controllers
             // --- STEG 4: HANTERA COOKIES (Refresh Token) ---
             var refreshTokenCookieOptions = new CookieOptions
             {
-                HttpOnly = true, // KRITISK: Skydd mot XSS
-                Secure = !_env.IsDevelopment(),
-                SameSite = _env.IsDevelopment() ? SameSiteMode.Lax : SameSiteMode.Strict,
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.None,
                 // Livslängden för Refresh Token (lång)
                 Expires = refreshTokenEntity.ExpiryDate
             };
@@ -161,17 +161,14 @@ namespace What2Eat.Areas.Customer.Controllers
                 return Ok(new { message = "Utloggning genomförd." });
             }
 
-            try
-            {
-                // 2. SERVER-SIDA: Kritiskt steg! Ogiltigförklara Refresh Token i databasen.
-                // Detta förhindrar återanvändning av den långlivade token.
-                await _jwtService.RevokeRefreshTokenAsync(refreshToken);
-            }
-            catch (Exception ex)
-            {
-                // Logga felet men fortsätt rensa cookies, då klienten ändå ska loggas ut.
-                // Exempelvis: _logger.LogError(ex, "Kunde inte ogiltigförklara Refresh Token.");
-            }
+          
+             // 2. SERVER-SIDA: Kritiskt steg! Ogiltigförklara Refresh Token i databasen.
+             // Detta förhindrar återanvändning av den långlivade token.
+             await _jwtService.RevokeRefreshTokenAsync(refreshToken);
+     
+             // Logga felet men fortsätt rensa cookies, då klienten ändå ska loggas ut.
+             // Exempelvis: _logger.LogError(ex, "Kunde inte ogiltigförklara Refresh Token.");
+     
 
             // 3. KLIENT-SIDA: Ta bort Access Token-cookien (din korta JWT)
             // OBS: Använd det korrekta namnet "accessToken" (inte "jwt" eller "refreshToken")

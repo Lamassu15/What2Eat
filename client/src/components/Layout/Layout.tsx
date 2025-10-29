@@ -6,7 +6,7 @@ import {
 import { AppSidebar } from "@/components/Layout/app-sidebar";
 import { ThemeProvider } from "@/components/theme-provider";
 import ModeToggle from "../mode-toggle";
-import { Outlet } from "react-router";
+import { NavLink, Outlet } from "react-router";
 
 const Layout = () => {
   return (
@@ -19,9 +19,9 @@ const Layout = () => {
             <header className="sticky top-0 z-40 flex h-16 items-center border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
               <div className="flex items-center gap-4 px-4 w-full">
                 <SidebarTrigger className="h-8 w-8" />
-                <h2 className="text-lg dark:bg-gradient-to-r dark:from-sky-500 dark:to-cyan-200 dark:bg-clip-text dark:text-transparent font-semibold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
+                <NavLink to="/" className="heading-5 dark:bg-gradient-to-r dark:from-sky-500 dark:to-cyan-200 dark:bg-clip-text dark:text-transparent font-semibold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
                   What2Eat
-                </h2>
+                </NavLink>
                 <div className="ml-auto flex items-center">
                   <ModeToggle />
                 </div>

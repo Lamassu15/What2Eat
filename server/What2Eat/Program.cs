@@ -29,13 +29,11 @@ else
     Console.WriteLine("✅ OpenAI API-nyckel laddad (dold).");
 }
 
+builder.Configuration.AddEnvironmentVariables();
+
 // Add services to the container.
-var connectionString =
-    builder.Configuration.GetConnectionString("DefaultConnection")
-        ?? throw new InvalidOperationException("Connection string"
-        + "'DefaultConnection' not found.");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-options.UseNpgsql(connectionString));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Konfigurera Identity (Använder nu ApplicationUser)
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
@@ -49,6 +47,8 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 })
 .AddEntityFrameworkStores<ApplicationDbContext>()
 .AddDefaultTokenProviders();
+
+
 
 // Konfigurera JWT Authentication
 builder.Services.AddAuthentication(options =>
@@ -107,8 +107,9 @@ builder.Services.AddCors(options =>
             "https://localhost:5173",
             "http://localhost:5174",
             "https://localhost:5174",
-            "https://localhost:7123"
-
+            "https://localhost:7123",
+            "https://what2-eat-eta.vercel.app/",
+            "https://yellow-sea-054692b03.3.azurestaticapps.net/"
         )
         .AllowAnyHeader()
         .AllowAnyMethod()

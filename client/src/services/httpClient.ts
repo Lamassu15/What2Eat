@@ -5,9 +5,7 @@ import axios, {
   type AxiosRequestConfig,
 } from "axios";
 
-const apiURL = import.meta.env.VITE_API_BASE_URL
-  ? import.meta.env.VITE_BACKEND_BASE_UR
-  : "";
+const apiURL ="https://wat2eat-web-api-fugqfjdce4b3gth0.swedencentral-01.azurewebsites.net/api";
 
 export const httpClient: AxiosInstance = axios.create({
   baseURL: apiURL, // Vi behöver INTE skicka Authorization header; cookies sköter det
