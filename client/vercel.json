@@ -1,5 +1,8 @@
 {
   "rewrites": [
-    { "source": "/(.*)", "destination": "/" }
+    {
+      "source": "/(.*)",
+      "destination": "/https://wat2eat-web-api-fugqfjdce4b3gth0.swedencentral-01.azurewebsites.net"
+    }
   ]
 }
