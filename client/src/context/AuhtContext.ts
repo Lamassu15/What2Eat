@@ -16,6 +16,8 @@ interface AuthContextType {
   login: (credentials: { email: string; password: string }) => Promise<void>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
+  isLoggingIn: boolean;
+  loginError: Error | null;
 }
 
 export const AuthContext = createContext<AuthContextType>({
@@ -24,5 +26,6 @@ export const AuthContext = createContext<AuthContextType>({
   login: async (): Promise<void> => Promise.resolve(),
   logout: async (): Promise<void> => Promise.resolve(),
   isAuthenticated: false,
+  isLoggingIn: false,
+  loginError: null,
 });
-

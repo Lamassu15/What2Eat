@@ -1,66 +1,62 @@
-import { AlertCircle } from "lucide-react";
-import { useState } from "react";
-import { Button } from "./ui/button";
-import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
-import { Input } from "./ui/input";
-import { registerUser } from "@/api/register";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router";
-import z from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { useMutation } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/useAuth";
+import { registerUser } from "@/api/register";
+
+import { Button } from "./ui/button";
+import { Alert, AlertDescription } from "./ui/alert";
+import { AlertCircle } from "lucide-react";
+import { Input } from "./ui/input";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "./ui/form";
+
+type RegisterRequest = {
+  email: string;
+  password: string;
+  confirmPassword: string;
+  firstName: string;
+  lastName: string;
+  imgProfile?: File;
+};
 
 const formSchema = z
   .object({
-    email: z.email("Invalid email address").nonempty("Email is required."),
-    password: z.string().min(6, "Password must be at least 6 characters."),
-    confirmPassword: z.string().min(1, "Please confirm your password."),
+    email: z.string().email("Invalid email").nonempty("Email is required"),
+    password: z.string().min(6, "Password must be at least 6 characters"),
+    confirmPassword: z.string().min(1, "Please confirm your password"),
     firstName: z
       .string()
-      .regex(/^[A-Za-z]+$/, "First name must contain only letters no spaces.")
-      .nonempty("First name is required."),
+      .regex(/^[A-Za-z]+$/, "First name must contain only letters")
+      .nonempty("First name is required"),
     lastName: z
       .string()
-      .regex(/^[a-zA-Z\s]+$/, "Last name must contain only letters.")
-      .nonempty("Last name is required."),
-    imgProfile: z
-      .any()
-      .refine(
-        (fileList) =>
-          fileList instanceof FileList
-            ? fileList.length === 0 ||
-              ["image/jpeg", "image/png", "image/jpg"].includes(
-                fileList[0]?.type
-              )
-            : true,
-        "Only JPG and PNG images are allowed."
-      )
-      .refine(
-        (fileList) =>
-          fileList instanceof FileList
-            ? fileList.length === 0 || fileList[0]?.size <= 5 * 1024 * 1024
-            : true,
-        "File must be less than 5MB."
-      )
-      .optional(),
+      .regex(/^[A-Za-z\s]+$/, "Last name must contain only letters")
+      .nonempty("Last name is required"),
+    imgProfile: z.any().optional(),
   })
   .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords do not match.",
-    path: ["confirmPassword."],
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
   });
 
 const RegisterForm = () => {
-  const [error, setError] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
+  const { login } = useAuth();
+
+  // ✅ Korrekt sätt att definiera mutation med typ
+  const mutation = useMutation({
+    mutationFn: (data: RegisterRequest) => registerUser(data),
+  });
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -76,25 +72,18 @@ const RegisterForm = () => {
   });
 
   const handleSubmit = async (data: z.infer<typeof formSchema>) => {
-    setIsSubmitting(true);
-    setError(null);
     try {
-      await registerUser({
-        email: data.email,
-        password: data.password,
-        confirmPassword: data.confirmPassword,
-        firstName: data.firstName,
-        lastName: data.lastName,
-        imgProfile: data.imgProfile ? data.imgProfile[0] : undefined,
+      await mutation.mutateAsync({
+        ...data,
+        imgProfile: data.imgProfile?.[0],
       });
-      navigate("/login");
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        console.error("Registration failed:", error.message);
-      }
-      setError("Registration failed. Please try again.");
+
+      // Logga in automatiskt efter registrering
+      await login({ email: data.email, password: data.password });
+      navigate("/dashboard");
+    } catch (err) {
+      console.error("Registration failed:", err);
     }
-    setIsSubmitting(false);
   };
 
   return (
@@ -103,15 +92,17 @@ const RegisterForm = () => {
         onSubmit={form.handleSubmit(handleSubmit)}
         className="flex flex-col gap-6"
       >
-        {error && (
-          <Alert variant="destructive">
+        {mutation.isError && (
+          <Alert variant="destructive" className="mb-4">
             <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Error</AlertTitle>
-            <AlertDescription>{error}</AlertDescription>
+            <AlertDescription>
+              {mutation.error instanceof Error
+                ? mutation.error.message
+                : "Registration failed. Please try again."}
+            </AlertDescription>
           </Alert>
         )}
 
-        {/* Emailfältet på egen rad */}
         <FormField
           control={form.control}
           name="email"
@@ -126,7 +117,6 @@ const RegisterForm = () => {
           )}
         />
 
-        {/* Övriga fält i ett rutnät */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <FormField
             control={form.control}
@@ -141,7 +131,6 @@ const RegisterForm = () => {
               </FormItem>
             )}
           />
-
           <FormField
             control={form.control}
             name="lastName"
@@ -169,7 +158,6 @@ const RegisterForm = () => {
               </FormItem>
             )}
           />
-
           <FormField
             control={form.control}
             name="confirmPassword"
@@ -204,8 +192,12 @@ const RegisterForm = () => {
           />
         </div>
 
-        <Button type="submit" className="w-full mt-4" disabled={isSubmitting}>
-          {isSubmitting ? "Registering..." : "Register"}
+        <Button
+          type="submit"
+          disabled={mutation.isPending}
+          className="w-full mt-4"
+        >
+          {mutation.isPending ? "Registering..." : "Register"}
         </Button>
       </form>
     </Form>

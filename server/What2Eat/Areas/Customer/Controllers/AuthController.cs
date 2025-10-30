@@ -161,14 +161,14 @@ namespace What2Eat.Areas.Customer.Controllers
                 return Ok(new { message = "Utloggning genomförd." });
             }
 
-          
-             // 2. SERVER-SIDA: Kritiskt steg! Ogiltigförklara Refresh Token i databasen.
-             // Detta förhindrar återanvändning av den långlivade token.
-             await _jwtService.RevokeRefreshTokenAsync(refreshToken);
-     
-             // Logga felet men fortsätt rensa cookies, då klienten ändå ska loggas ut.
-             // Exempelvis: _logger.LogError(ex, "Kunde inte ogiltigförklara Refresh Token.");
-     
+
+            // 2. SERVER-SIDA: Kritiskt steg! Ogiltigförklara Refresh Token i databasen.
+            // Detta förhindrar återanvändning av den långlivade token.
+            await _jwtService.RevokeRefreshTokenAsync(refreshToken);
+
+            // Logga felet men fortsätt rensa cookies, då klienten ändå ska loggas ut.
+            // Exempelvis: _logger.LogError(ex, "Kunde inte ogiltigförklara Refresh Token.");
+
 
             // 3. KLIENT-SIDA: Ta bort Access Token-cookien (din korta JWT)
             // OBS: Använd det korrekta namnet "accessToken" (inte "jwt" eller "refreshToken")
@@ -211,8 +211,8 @@ namespace What2Eat.Areas.Customer.Controllers
                 var accessTokenCookieOptions = new CookieOptions
                 {
                     HttpOnly = true,
-                    Secure = !_env.IsDevelopment(),
-                    SameSite = _env.IsDevelopment() ? SameSiteMode.Lax : SameSiteMode.Strict,
+                    Secure = true,
+                    SameSite = SameSiteMode.None,
                     Expires = DateTimeOffset.UtcNow.AddMinutes(
                         double.Parse(_configuration["Jwt:AccessTokenLifetimeMinutes"] ?? "15")
                     )
@@ -222,8 +222,8 @@ namespace What2Eat.Areas.Customer.Controllers
                 var refreshTokenCookieOptions = new CookieOptions
                 {
                     HttpOnly = true,
-                    Secure = !_env.IsDevelopment(),
-                    SameSite = _env.IsDevelopment() ? SameSiteMode.Lax : SameSiteMode.Strict,
+                    Secure = true,
+                    SameSite = SameSiteMode.None,
                     Expires = newRefreshTokenEntity.ExpiryDate
                 };
                 Response.Cookies.Append("refreshToken", newRefreshTokenEntity.Token, refreshTokenCookieOptions);

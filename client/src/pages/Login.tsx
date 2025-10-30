@@ -2,7 +2,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useAuth } from "../hooks/useAuth";
-import { useLogin } from "../api/auth";
 import { NavLink, useNavigate } from "react-router";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -34,9 +33,8 @@ const loginSchema = z.object({
 type LoginFormData = z.infer<typeof loginSchema>;
 
 const Login = () => {
-  const { login } = useAuth();
+  const { login, isLoggingIn, loginError } = useAuth();
   const navigate = useNavigate();
-  const mutation = useLogin();
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -49,10 +47,10 @@ const Login = () => {
   const onSubmit = async (data: LoginFormData) => {
     try {
       // login() tar hand om API-anrop + uppdatering av user i AuthContext
-      await login({ email: data.email, password: data.password });
+      await login(data);
       navigate("/chat");
-    } catch (error: any) {
-      console.error("Login failed:", error);
+    } catch (err) {
+      console.error("Login failed:", err);
     }
   };
 
@@ -66,15 +64,16 @@ const Login = () => {
                 className="p-6 md:p-8"
                 onSubmit={form.handleSubmit(onSubmit)}
               >
-                {mutation.isError && (
-                  <Alert variant="destructive" aria-live="polite">
+                {loginError && (
+                  <Alert variant="destructive" className="mb-4">
                     <AlertCircle className="h-4 w-4" />
                     <AlertDescription>
-                      {(mutation.error as any)?.message ??
-                        "An error occurred during login"}
+                      {loginError.message ??
+                        "Login failed. Please check your credentials and try again."}
                     </AlertDescription>
                   </Alert>
                 )}
+
                 <div className="flex flex-col gap-6">
                   <div className="flex flex-col items-center text-center">
                     <h1 className="text-2xl font-bold">Welcome back</h1>
@@ -96,7 +95,7 @@ const Login = () => {
                               id="email"
                               type="email"
                               placeholder="alexander@example.com"
-                              disabled={mutation.isPending}
+                              disabled={isLoggingIn}
                               {...field}
                             />
                           </FormControl>
@@ -119,7 +118,7 @@ const Login = () => {
                               id="password"
                               type="password"
                               placeholder="••••••••"
-                              disabled={mutation.isPending}
+                              disabled={isLoggingIn}
                               {...field}
                             />
                           </FormControl>
@@ -133,9 +132,9 @@ const Login = () => {
                   <Button
                     type="submit"
                     className="w-full"
-                    disabled={mutation.isPending}
+                    disabled={isLoggingIn}
                   >
-                    {mutation.isPending && (
+                    {isLoggingIn && (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     )}
                     Login

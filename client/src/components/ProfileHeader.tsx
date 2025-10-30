@@ -9,6 +9,7 @@ const ProfileHeader = () => {
 
   const { user } = useAuth();
   if (!user) return <p>Loading user info...</p>;
+  
   return (
     <Card>
       <CardContent className="p-6">

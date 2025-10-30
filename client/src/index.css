@@ -70,12 +70,15 @@
 
   --sidebar: oklch(0.25 0.02 30);
   --sidebar-foreground: oklch(0.98 0.01 20);
-  --sidebar-primary: oklch(0.63 0.19 199);
+  --sidebar-primary: oklch(42.906% 0.22749 301.295);
   --sidebar-primary-foreground: oklch(1 0 0);
   --sidebar-accent: oklch(0.3 0.01 20);
-  --sidebar-accent-foreground: oklch(0.98 0.01 20);
+  --sidebar-accent-foreground: oklch(94.435% 0.11483 136.617);
   --sidebar-border: oklch(0.4 0.015 25);
   --sidebar-ring: oklch(0.63 0.19 199);
+
+  --color-gradient: linear-gradient(to right, #991b1b, #fcd34d, #4f46e5);
+  --logo-gradient: linear-gradient(to right, #facc15, #f97316, #c026d3);
 }
 
 .light {
@@ -102,7 +105,7 @@
 
   /* Sekundär: Neutral men något starkare */
   --secondary: oklch(74% 0.04 240); /* ljusare blågrå */
-  --secondary-foreground: oklch(20% 0.03 40);
+  --secondary-foreground: oklch(100% 0.00011 271.152);
 
   /* Muted: Ljus men läsbar */
   --muted: oklch(84% 0.02 240);
@@ -130,6 +133,9 @@
   --sidebar-accent-foreground: var(--secondary-foreground);
   --sidebar-border: var(--border);
   --sidebar-ring: var(--ring);
+
+  --color-gradient: linear-gradient(to right, #b91c1c, #d97706, #4338ca);
+  --logo-gradient: linear-gradient(to right, #020024, #090979, #522F0B);
 }
 
 @layer base {
@@ -139,17 +145,6 @@
   body {
     @apply bg-background text-foreground;
   }
-}
-
-.dark {
-  --sidebar: hsl(240 5.9% 10%);
-  --sidebar-foreground: hsl(240 4.8% 95.9%);
-  --sidebar-primary: hsl(224.3 76.3% 48%);
-  --sidebar-primary-foreground: hsl(0 0% 100%);
-  --sidebar-accent: hsl(240 3.7% 15.9%);
-  --sidebar-accent-foreground: hsl(240 4.8% 95.9%);
-  --sidebar-border: hsl(240 3.7% 15.9%);
-  --sidebar-ring: hsl(217.2 91.2% 59.8%);
 }
 
 @layer components {
@@ -173,5 +168,13 @@
   }
   .paragraph {
     @apply text-base sm:text-lg md:text-lg lg:text-xl leading-relaxed;
+  }
+  .text-gradient {
+    @apply bg-clip-text text-transparent;
+    background-image: var(--color-gradient);
+  }
+  .logo-gradient {
+    @apply bg-clip-text text-transparent font-bold;
+    background-image: var(--logo-gradient);
   }
 }

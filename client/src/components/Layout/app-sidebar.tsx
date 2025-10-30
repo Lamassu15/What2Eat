@@ -44,9 +44,9 @@ export function AppSidebar() {
             {links.map((link) => (
               <SidebarMenuItem key={link.title}>
                 <SidebarMenuButton asChild>
-                  <NavLink to={link.url}>
+                  <NavLink to={link.url} className="uppercase font-bold tracking-wide">
                     <link.icon />
-                    <span>{link.title}</span>
+                    <span className="">{link.title}</span>
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>

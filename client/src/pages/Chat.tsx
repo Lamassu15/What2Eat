@@ -22,9 +22,9 @@ import {
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
 
 const Chat = () => {
-
   const [ingredients, setIngredients] = useState("");
   // use the generate mutation from the shared recipes context
   const { generate } = useRecipes();
@@ -65,6 +65,10 @@ const Chat = () => {
       setError(msg);
     }
   };
+
+  const { user } = useAuth();
+  if (!user) return <p>Loading user info...</p>;
+
   return (
     <Card className="flex flex-col flex-1 w-full max-h-screen max-w-7xl mx-auto">
       <CardHeader className="flex items-center gap-3">
@@ -83,6 +87,17 @@ const Chat = () => {
       </CardHeader>
       <Separator />
       <CardContent className="flex flex-col flex-1 min-h-0">
+        {!recipe && (
+          <div className="flex flex-col gap-6 items-center justify-center h-full min-h-[300px]">
+            <h1 className="heading-5 text-center text-accent-foreground">
+              Hello{" "}
+              <strong className="text-gradient">
+                {user.firstName} {user.lastName}
+              </strong>
+              , Ready to generate some delicious recipes?
+            </h1>
+          </div>
+        )}
         <ScrollArea className="flex-1 h-full">
           {recipe && (
             <div className="flex flex-col gap-6 items-center ">

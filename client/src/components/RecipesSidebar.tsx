@@ -8,7 +8,7 @@ import {
   SidebarMenuItem,
 } from "./ui/sidebar";
 import { useRecipes, type Recipe } from "@/context/RecipeContext";
-import { LoaderCircle, EllipsisVertical, Trash2 } from "lucide-react";
+import { EllipsisVertical, Trash2 } from "lucide-react";
 import { UtensilsCrossed } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -29,6 +29,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useState } from "react";
+import { Spinner } from "./ui/spinner";
 
 const RecipesSidebar = () => {
   const { isAuthenticated } = useAuth();
@@ -55,9 +56,8 @@ const RecipesSidebar = () => {
 
           <SidebarMenu>
             {isLoading && (
-              <div className="flex items-center gap-2 p-2 text-xs text-muted-foreground">
-                <LoaderCircle className="animate-spin h-4 w-4" />
-                isLoading recipes...
+              <div className="flex justify-center items-center gap-2 p-2 text-xs text-muted-foreground">
+                <Spinner className="size-5 text-destructive text-center" />
               </div>
             )}
 

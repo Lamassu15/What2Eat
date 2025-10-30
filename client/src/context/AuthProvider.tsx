@@ -6,22 +6,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const { mutateAsync: loginRequest } = useLogin();
-  const { mutateAsync: logoutRequest } = useLogout();
+  // ✅ React Query mutations
+  const loginMutation = useLogin();
+  const logoutMutation = useLogout();
 
-  // ✅ När appen laddas: kolla om användaren är inloggad via cookies
+  // ✅ När appen laddas: kolla om användaren är inloggad (via cookies/session)
   useEffect(() => {
     const fetchUser = async () => {
-      setLoading(true);
       try {
         const data = await getUserInfo();
         setUser(data);
-      } catch (error: unknown) {
-        if (error instanceof Error) {
-          console.error("Could not retrieve user:", error.message);
-        } else {
-          console.error("An unknown error occurred:", error);
-        }
+      } catch {
         setUser(null);
       } finally {
         setLoading(false);
@@ -31,15 +26,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     fetchUser();
   }, []);
 
-  // ✅ Login
+  // ✅ Login med mutation
   const login = async (credentials: { email: string; password: string }) => {
-    setLoading(true);
     try {
-      await loginRequest(credentials);
-      const data = await getUserInfo();
+      setLoading(true);
+      await loginMutation.mutateAsync(credentials); // anropar backend
+      const data = await getUserInfo(); // hämta användarinfo
       setUser(data);
     } catch (error) {
-      console.error("Login failed:", error);
+      console.error("❌ Login failed:", error);
       setUser(null);
       throw error;
     } finally {
@@ -47,14 +42,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  // ✅ Logout
+  // ✅ Logout med mutation
   const logout = async () => {
-    setLoading(true);
     try {
-      await logoutRequest();
+      setLoading(true);
+      await logoutMutation.mutateAsync(); // backend logout
       setUser(null);
     } catch (error) {
-      console.error("Logout failed:", error);
+      console.error("❌ Logout failed:", error);
       throw error;
     } finally {
       setLoading(false);
@@ -71,6 +66,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         login,
         logout,
         isAuthenticated,
+        isLoggingIn: loginMutation.isPending,
+        loginError: loginMutation.isError ? loginMutation.error : null,
       }}
     >
       {children}
