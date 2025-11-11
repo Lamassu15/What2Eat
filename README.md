@@ -28,6 +28,11 @@ Applikationen är byggd som en **fullstack-lösning** med fokus på:
 
 ---
 
+<img width="1383" height="1216" alt="What2Eat recipe" src="https://github.com/user-attachments/assets/d3007e0a-12c4-4437-bbf9-9ba27086148a" />
+
+---
+
+
 ## 🧩 Teknologier
 
 ### ⚙️ Backend — *Byggd för prestanda, säkerhet och skalbarhet*
