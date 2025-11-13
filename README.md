@@ -24,14 +24,11 @@ Applikationen är byggd som en **fullstack-lösning** med fokus på:
 - 🧠 **Intelligens** (OpenAI-integration)
 - 🧩 **Struktur och skalbarhet**
 
-<img width="763" height="1019" alt="What2Eat home" src="https://github.com/user-attachments/assets/122f5718-aebe-4ce4-b546-cf27dc62c5a4" />
+<img width="400" height="400" alt="What2Eat home" src="https://github.com/user-attachments/assets/122f5718-aebe-4ce4-b546-cf27dc62c5a4" />
+<img width="400" height="400" alt="What2Eat recipe" src="https://github.com/user-attachments/assets/d3007e0a-12c4-4437-bbf9-9ba27086148a" />
+<img width="400" height="400" alt="Skärmbild 2025-10-21 135915" src="https://github.com/user-attachments/assets/a801411a-d307-42b6-964e-1516ccfe1d9a" />
 
 ---
-
-<img width="1383" height="1216" alt="What2Eat recipe" src="https://github.com/user-attachments/assets/d3007e0a-12c4-4437-bbf9-9ba27086148a" />
-
----
-
 
 ## 🧩 Teknologier
 
