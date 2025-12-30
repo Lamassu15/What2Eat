@@ -109,13 +109,19 @@ builder.Services.AddCors(options =>
             "https://localhost:5174",
             "https://localhost:7123",
             "https://what2-eat-eta.vercel.app",
-            "https://wat2eat-web-api-fugqfjdce4b3gth0.swedencentral-01.azurewebsites.net"
+            "https://wat2eat-web-api-fugqfjdce4b3gth0.swedencentral-01.azurewebsites.net",
+            "https://what2eat-9zts.onrender.com"
         )
         .AllowAnyHeader()
         .AllowAnyMethod()
         .AllowCredentials();
     });
 });
+
+var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+
+builder.WebHost.UseUrls($"http://*:{port}");
+
 
 // Configure rate limiting
 builder.Services.AddRateLimiter(options =>
