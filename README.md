@@ -1,34 +1,91 @@
-Från idé till verklighet: Byggandet av en fullstack-applikation för receptgenerering med AI
-Jag är stolt över att presentera ett av mina senaste fullstack-projekt, där jag har utforskat kraften i artificiell intelligens för att lösa ett vardagligt problem: Att få nya, unika recept.
+# 🧠 From Idea to Reality: AI-Powered Recipe Generator  
+> En fullstack-applikation som kombinerar **artificiell intelligens**, **modern webbutveckling** och **säker backend-arkitektur** för att skapa unika, anpassade recept med AI.
 
-Detta projekt är en robust och skalbar applikation som låter användare generera anpassade recept med hjälp av AI. Det är en pågående process med fulla CRUD-funktioner (Create, Read, Update, Delete) för att hantera recept.
+---
 
-Teknologierna bakom lösningen
-Backend: Byggd för skalbarhet och säkerhet
-På serversidan har jag byggt en kraftfull backend med ASP.NET Core. Valet av detta ramverk ger en högpresterande och stabil grund för applikationen. För att interagera med AI-modeller har jag integrerat OpenAI API genom det officiella OpenAI .NET-biblioteket. Denna integration är designad för att vara säker, med strikt separation av intressen (DTOs) för att hantera data från API:et och skydda databasmodeller.
+<p align="center">
+  <img src="https://img.shields.io/badge/.NET-8.0-blue?logo=dotnet&logoColor=white" alt=".NET Badge"/>
+  <img src="https://img.shields.io/badge/React-18-blue?logo=react&logoColor=white" alt="React Badge"/>
+  <img src="https://img.shields.io/badge/Tailwind_CSS-3.4-06B6D4?logo=tailwindcss&logoColor=white" alt="Tailwind Badge"/>
+  <img src="https://img.shields.io/badge/PostgreSQL-Neon-4169E1?logo=postgresql&logoColor=white" alt="PostgreSQL Badge"/>
+  <img src="https://img.shields.io/badge/OpenAI_SDK-.NET-green?logo=openai&logoColor=white" alt="OpenAI Badge"/>
+</p>
 
-Databasen hanteras med Entity Framework Core, som förenklar kommunikationen med en SQL-databas. Användarautentisering och auktorisering sköts med JWT (JSON Web Tokens), vilket garanterar en säker och tillståndslös autentiseringsmekanism.
+---
 
-Frontend: Moderna och effektiva verktyg
-På klientsidan har jag utvecklat en responsiv och dynamisk användarupplevelse med moderna webbteknologier:
+## 🚀 Översikt
 
-React för att bygga en komponentbaserad och interaktiv UI.
+Detta projekt är resultatet av en idé att lösa ett vardagsproblem – *"Vad ska jag laga idag?"*.  
+Genom att integrera **OpenAI:s API** kan användaren generera kreativa recept baserat på ingredienser, preferenser och dieter.  
 
-TypeScript för att säkerställa hög kodkvalitet och minska fel.
+Applikationen är byggd som en **fullstack-lösning** med fokus på:
+- 🔒 **Säkerhet** (JWT + Refresh Tokens + ASP.NET Identity)
+- ⚡ **Prestanda** (React, Vite, React Query)
+- 🧠 **Intelligens** (OpenAI-integration)
+- 🧩 **Struktur och skalbarhet**
 
-React Query för effektiv hantering av API-anrop och cachning, vilket förbättrar prestandan avsevärt.
+<img width="400" height="400" alt="What2Eat home" src="https://github.com/user-attachments/assets/122f5718-aebe-4ce4-b546-cf27dc62c5a4" />
+<img width="400" height="400" alt="What2Eat recipe" src="https://github.com/user-attachments/assets/d3007e0a-12c4-4437-bbf9-9ba27086148a" />
+<img width="400" height="400" alt="Skärmbild 2025-10-21 135915" src="https://github.com/user-attachments/assets/a801411a-d307-42b6-964e-1516ccfe1d9a" />
 
-Tailwind CSS för snabb och flexibel styling.
+---
 
-React Router för smidig navigering.
+## 🧩 Teknologier
 
-React Hook Form med Zod för att hantera formulär och datavalidering på ett effektivt sätt.
+### ⚙️ Backend — *Byggd för prestanda, säkerhet och skalbarhet*
+| Funktion | Teknologi |
+|-----------|------------|
+| 🧱 **Ramverk** | [ASP.NET Core Web API](https://learn.microsoft.com/aspnet/core) |
+| 🔐 **Autentisering & Auktorisering** | **JWT (Access + Refresh Tokens)** & **ASP.NET Core Identity** |
+| ♻️ **Token Rotation** | Säker **refresh token-hantering** för långvariga sessioner |
+| 🧭 **Datamodellering** | **DTOs (Data Transfer Objects)** för ren datahantering |
+| 🗃️ **Databas** | **Neon (PostgreSQL)** – molnbaserad databaslösning |
+| 🧩 **ORM** | [Entity Framework Core](https://learn.microsoft.com/ef/core) |
+| 🤖 **AI-integration** | [OpenAI .NET SDK](https://github.com/openai/openai-dotnet) |
+| 🧪 **API Test UI** | [Scalar](https://scalar.com) för interaktiv testning av endpoints |
 
-Shadcn/ui för att bygga snygga och tillgängliga UI-komponenter.
+**Arkitekturprinciper:**
+- Tydlig lagerindelning *(Controllers → Services → Repositories → DTOs)*  
+- Säker autentisering med **Access & Refresh Tokens**  
+- Rollbaserad åtkomst via **ASP.NET Identity**  
+- Effektiv datakommunikation via **EF Core**  
+- Stabil AI-integrering via **OpenAI SDK**
 
-Vite som en snabb build-tool för en smidig utvecklingsupplevelse.
+---
 
-Slutresultat och framtid
-Denna kombination av tekniker har resulterat i en fullstack-applikation som inte bara är funktionell utan också byggd med best practices i åtanke. Det är ett bevis på hur moderna verktyg kan samarbeta för att skapa effektiva och innovativa lösningar.
+### 💻 Frontend — *Modern, snabb och användarvänlig*
+| Funktion | Teknologi |
+|-----------|------------|
+| ⚛️ **Ramverk** | [React](https://react.dev/) |
+| 🧠 **Språk** | [TypeScript](https://www.typescriptlang.org/) |
+| 🎨 **Stil** | [Tailwind CSS](https://tailwindcss.com/) |
+| 🔄 **Datahantering & Caching** | [React Query](https://tanstack.com/query/latest) |
+| 🧭 **Routing** | [React Router](https://reactrouter.com/) |
+| ✅ **Formulär & Validering** | [React Hook Form](https://react-hook-form.com/) + [Zod](https://zod.dev/) |
+| 🧩 **UI-komponenter** | [shadcn/ui](https://ui.shadcn.com/) |
+| ⚡ **Byggverktyg** | [Vite](https://vitejs.dev/) |
+| 🌐 **HTTP-förfrågningar** | [Axios](https://axios-http.com/) med **interceptors** för token-hantering och HTTP-client |
 
-Även om projektet har grundläggande funktionalitet för att hantera recept, ser jag en stor potential att vidareutveckla det till en fullfjädrad produkt. Jag ser fram emot att diskutera projektet mer ingående och dela med mig av de lärdomar jag har tagit med mig.
+**Frontend-egenskaper:**
+- 🔁 Axios interceptors hanterar **Access Token-uppdatering (refresh tokens)** automatiskt  
+- ⚡ Snabba API-anrop med React Query & Axios  
+- 🧩 Typstark och modulär struktur med TypeScript  
+- 🎨 Modern UI med Tailwind CSS och shadcn/ui  
+
+---
+
+## 🔧 Funktionalitet
+
+✅ Generera AI-baserade recept med OpenAI  
+✅ Hantera recept (CRUD)  
+✅ Säker inloggning och registrering (JWT + Identity)  
+✅ Token rotation (Refresh Tokens)  
+✅ Axios interceptors för automatiska token-förnyelser  
+✅ Spara och uppdatera recept i PostgreSQL via EF Core  
+✅ Testa API-endpoints med Scalar  
+✅ Typstark, modulär och skalbar kodstruktur  
+
+---
+
+## 🧱 Arkitekturöversikt
+
