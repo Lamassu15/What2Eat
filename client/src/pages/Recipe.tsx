@@ -150,7 +150,7 @@ const Recipe = () => {
                   </div>
                 </div>
                 <Button variant="outline" onClick={handleCopyLink}>
-                  Share ricpe <TbShare2 />
+                  Share recipe<TbShare2 />
                 </Button>
               </CardContent>
             </Card>
@@ -207,9 +207,10 @@ const Recipe = () => {
                           key={ins.id}
                           className="flex gap-3 items-start bg-background rounded-md p-3 shadow-sm"
                         >
-                          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">
+                          <span className="flex items-center justify-center aspect-square min-w-[24px] rounded-full bg-primary text-primary-foreground text-xs font-bold">
                             {ins.stepNumber}
                           </span>
+
                           <p className="text-sm text-muted-foreground leading-relaxed">
                             {ins.description}
                           </p>

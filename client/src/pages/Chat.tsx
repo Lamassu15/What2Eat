@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { useRecipes, type Recipe } from "@/context/RecipeContext";
+import { useRecipes } from "@/context/RecipeContext";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -28,45 +28,23 @@ const Chat = () => {
   const [ingredients, setIngredients] = useState("");
   // use the generate mutation from the shared recipes context
   const { generate } = useRecipes();
-  const [recipe, setRecipe] = useState<Recipe | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const recipe = generate.data;
+  const isGenerating = generate.isPending;
+  const error = generate.error;
+
   const generateRecipeHandler = async () => {
-    if (!ingredients.trim()) return;
+    if (!ingredients.trim() || isGenerating) return;
 
-    setError(null);
-    setRecipe(null);
-
-    // Use the react-query mutation to generate a recipe and show toast feedback
-    try {
-      const promise = generate.mutateAsync({ ingredients });
-
-      await toast.promise(promise as Promise<Recipe>, {
-        loading: "Generating recipe...",
-        success: (data: Recipe) => {
-          // mutation resolved with the created recipe
-          setRecipe(data);
-          return "Recipe generated";
-        },
-        error: (err: unknown) => {
-          const msg =
-            err instanceof Error
-              ? err.message
-              : String(err || "Something went wrong");
-          setError(msg);
-          return msg;
-        },
-      });
-    } catch (e: unknown) {
-      // error handled by toast.promise, but keep a local fallback
-      const msg =
-        e instanceof Error
-          ? e.message
-          : String(e || "Failed to generate recipe");
-      setError(msg);
-    }
+    await toast.promise(generate.mutateAsync({ ingredients }), {
+      loading: "Generating recipe...",
+      success: "Recipe generated",
+      error: (err) =>
+        err instanceof Error ? err.message : "Something went wrong",
+    });
   };
 
   const { user } = useAuth();
+
   if (!user) return <p>Loading user info...</p>;
 
   return (
@@ -87,7 +65,7 @@ const Chat = () => {
       </CardHeader>
       <Separator />
       <CardContent className="flex flex-col flex-1 min-h-0">
-        {!recipe && (
+        {!recipe && !isGenerating && (
           <div className="flex flex-col gap-6 items-center justify-center h-full min-h-[300px]">
             <h1 className="heading-5 text-center text-accent-foreground">
               Hello{" "}
@@ -199,26 +177,27 @@ const Chat = () => {
             placeholder="Write ingredients, e.g. 'Tomato, Egg, Butter & Salt' or a dish like 'Carbonara, Smashed burger'."
             value={ingredients}
             onChange={(e) => setIngredients(e.target.value)}
-            className="pr-12 resize-none w-full overflow-x-hidden"
+            className="pr-12 resize-none w-full overflow-x-hidden text-xs"
             rows={3}
           />
           <Button
             size="icon"
             className="absolute bottom-4 right-2 h-8 w-8"
             onClick={generateRecipeHandler}
-            disabled={
-              (generate as { status?: string })?.status === "loading" ||
-              ingredients.trim().length === 0
-            }
+            disabled={isGenerating || ingredients.trim().length === 0}
           >
-            {(generate as { status?: string })?.status === "loading" ? (
+            {isGenerating ? (
               <Loader className="animate-spin h-4 w-4" />
             ) : (
               <Send className="h-4 w-4" />
             )}
           </Button>
         </div>
-        {error && <p className="text-destructive text-sm">{error}</p>}
+        {error && (
+          <p className="text-destructive text-sm">
+            {error instanceof Error ? error.message : "Error"}
+          </p>
+        )}
       </CardFooter>
     </Card>
   );

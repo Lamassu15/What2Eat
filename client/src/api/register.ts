@@ -23,7 +23,6 @@ export const registerUser = async (data: RegisterRequest) => {
   }
 
   const res = await httpClient.post("/auth/register", formData, {
-    headers: { "Content-Type": "multipart/form-data" },
   });
 
   return res.data;

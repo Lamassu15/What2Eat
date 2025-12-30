@@ -6,16 +6,17 @@ import { defineConfig } from "vite";
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],
-  // server: {
-  //   proxy: {
-  //     "/api": {
-  //       target: "http://localhost:5163",
-  //       changeOrigin: true,
-  //       secure: false,
-  //       rewrite: (path) => path.replace(/^\/api/, "/api"),
-  //     },
-  //   },
-  // },
+  server: {
+    proxy: {
+      "/api": {
+        target:
+          "http://localhost:5163",
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/api/, "/api"),
+      },
+    },
+  },
   base: "./",
   resolve: {
     alias: {

@@ -109,7 +109,7 @@ builder.Services.AddCors(options =>
             "https://localhost:5174",
             "https://localhost:7123",
             "https://what2-eat-eta.vercel.app",
-            "https://yellow-sea-054692b03.3.azurestaticapps.net"
+            "https://wat2eat-web-api-fugqfjdce4b3gth0.swedencentral-01.azurewebsites.net"
         )
         .AllowAnyHeader()
         .AllowAnyMethod()
@@ -129,7 +129,7 @@ builder.Services.AddRateLimiter(options =>
                           ?? "anonymous",
             factory: _ => new FixedWindowRateLimiterOptions
             {
-                PermitLimit = 10,               // Max 10 requests
+                PermitLimit = 1,                // Max 1 concurrent request per partition (serialize recipe generation)
                 Window = TimeSpan.FromMinutes(1), // Per minut
                 QueueLimit = 0,
                 QueueProcessingOrder = QueueProcessingOrder.OldestFirst
@@ -210,10 +210,13 @@ app.UseCors(ClientCorsPolicy);
 app.UseRateLimiter();
 
 app.UseStaticFiles();
+app.UseDefaultFiles();
 
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.MapFallbackToFile("index.html");
 
 app.Run();

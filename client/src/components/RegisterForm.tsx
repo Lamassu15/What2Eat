@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation } from "@tanstack/react-query";
+import type { AxiosError } from "axios";
 import { useAuth } from "@/hooks/useAuth";
 import { registerUser } from "@/api/register";
 
@@ -80,7 +81,7 @@ const RegisterForm = () => {
 
       // Logga in automatiskt efter registrering
       await login({ email: data.email, password: data.password });
-      navigate("/dashboard");
+      navigate("/chat");
     } catch (err) {
       console.error("Registration failed:", err);
     }
@@ -96,9 +97,27 @@ const RegisterForm = () => {
           <Alert variant="destructive" className="mb-4">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              {mutation.error instanceof Error
-                ? mutation.error.message
-                : "Registration failed. Please try again."}
+              {(() => {
+                const err = mutation.error as unknown as
+                  | AxiosError
+                  | Error
+                  | null;
+                if (!err) return "Registration failed. Please try again.";
+                // AxiosError with response data (ModelState errors)
+                if ((err as AxiosError).isAxiosError) {
+                  const axiosErr = err as AxiosError;
+                  // Try to show server validation errors (could be an object)
+                  const data = axiosErr.response?.data;
+                  if (!data) return axiosErr.message;
+                  try {
+                    if (typeof data === "string") return data;
+                    if (typeof data === "object") return JSON.stringify(data);
+                  } catch {
+                    return axiosErr.message;
+                  }
+                }
+                return (err as Error).message;
+              })()}
             </AlertDescription>
           </Alert>
         )}

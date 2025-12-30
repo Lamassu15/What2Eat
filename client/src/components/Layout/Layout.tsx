@@ -29,9 +29,9 @@ const Layout = () => {
             </header>
 
             {/* Content */}
-            <main className="flex-1 flex w-full min-h-0 p-4">
+            <div className="flex-1 flex w-full min-h-0 p-4">
               <Outlet />
-            </main>
+            </div>
           </SidebarInset>
         </div>
       </SidebarProvider>
