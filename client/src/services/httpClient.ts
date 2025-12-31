@@ -9,7 +9,7 @@ const apiURL = import.meta.env.DEV
   ? "/api"
   : `${
       import.meta.env.VITE_BACKEND_BASE_URL ??
-      "https://wat2eat-web-api-fugqfjdce4b3gth0.swedencentral-01.azurewebsites.net"
+      "https://what2eat-9zts.onrender.com"
     }/api`;
 
 export const httpClient: AxiosInstance = axios.create({
