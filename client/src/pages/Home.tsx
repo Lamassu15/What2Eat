@@ -15,7 +15,7 @@ const iconMap: Record<string, JSX.Element> = {
 
 const Home = () => {
   return (
-    <div className="w-full h-full flex flex-col items-center bg-background">
+    <div className="w-full h-full grid">
       {/* Hero Content */}
       <div className="relative z-10 mt-20 mb-20 flex flex-col items-center justify-center text-center">
         <div className="max-w-4xl mx-auto animate-slide-up">
@@ -55,15 +55,15 @@ const Home = () => {
           </div>
         </div>
       </div>
-      <hr className="my-12 w-full h-px border-t-0 bg-transparent bg-gradient-to-r from-transparent via-neutral-500 to-transparent opacity-25 dark:via-neutral-400"></hr>
+      <hr className="w-full h-px border-t-0 bg-transparent bg-gradient-to-r from-transparent via-neutral-500 to-transparent opacity-25 dark:via-neutral-400"></hr>
       {/* Features Section */}
-      <section className="relative z-10  bg-background">
+      <section>
         <div className="max-w-5xl mx-auto">
           <SectionTitle
             title="Features"
             subtitle="Create a recipe by a click"
           ></SectionTitle>
-          <div className="grid grid-cols-1 lg:grid-cols-3  gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3  gap-4">
             {features.map((feature) => (
               <Card
                 key={feature.title}

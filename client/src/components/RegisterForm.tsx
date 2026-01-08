@@ -5,7 +5,6 @@ import { z } from "zod";
 import { useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { registerUser } from "@/api/register";
-
 import { Button } from "./ui/button";
 import { Alert, AlertDescription } from "./ui/alert";
 import { AlertCircle } from "lucide-react";
@@ -80,7 +79,7 @@ const RegisterForm = () => {
 
       // Logga in automatiskt efter registrering
       await login({ email: data.email, password: data.password });
-      navigate("/dashboard");
+      navigate("/chat");
     } catch (err) {
       console.error("Registration failed:", err);
     }

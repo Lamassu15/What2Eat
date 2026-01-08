@@ -1,11 +1,16 @@
-import { refreshToken } from "@/api/auth";
 import axios, {
   AxiosError,
   type AxiosInstance,
   type AxiosRequestConfig,
 } from "axios";
 
-const apiURL ="https://wat2eat-web-api-fugqfjdce4b3gth0.swedencentral-01.azurewebsites.net/api";
+// Use Vite dev proxy in development (frontend -> /api). In production use configured backend URL.
+const apiURL = import.meta.env.DEV
+  ? "/api"
+  : `${
+      import.meta.env.VITE_BACKEND_BASE_URL ??
+      "https://what2eat-9zts.onrender.com"
+    }/api`;
 
 export const httpClient: AxiosInstance = axios.create({
   baseURL: apiURL, // Vi behöver INTE skicka Authorization header; cookies sköter det
@@ -66,9 +71,12 @@ httpClient.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        // Anropa refresh endpointen. Den sätter de nya cookies i webbläsaren.
-        // Use raw axios to avoid interceptor loop and any circular imports.
-        await refreshToken();
+        // Anropa refresh endpointen direkt med raw axios. Detta undviker cirkulära imports.
+        await axios.post(
+          `${apiURL}/auth/refresh-token`,
+          {},
+          { withCredentials: true }
+        );
 
         failedRequests.forEach(({ resolve, originalRequest }) => {
           resolve(httpClient.request(originalRequest));

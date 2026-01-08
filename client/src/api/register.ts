@@ -22,9 +22,6 @@ export const registerUser = async (data: RegisterRequest) => {
     formData.append("ImgProfile", data.imgProfile);
   }
 
-  const res = await httpClient.post("/auth/register", formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
-
+  const res = await httpClient.post("/auth/register", formData, {});
   return res.data;
 };
