@@ -1,0 +1,6 @@
+services:
+  what2eat:
+    image: ${DOCKER_REGISTRY-}what2eat
+    build:
+      context: .
+      dockerfile: What2Eat/Dockerfile
